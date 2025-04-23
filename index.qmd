@@ -217,6 +217,7 @@ data %>%
 
 -   **Resultados del modelo**\
     \
+    ![](esc_opt.png)
 :::
 
 ::: {.column style="font-size: 15px;"}
