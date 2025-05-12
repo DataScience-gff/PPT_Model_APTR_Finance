@@ -1,0 +1,231 @@
+---
+title: Metodología Apetito Riesgo
+subtitle: Modelo 
+format: clean-revealjs
+execute: 
+  echo: true
+  output: true
+code-fold: false
+code-overflow: wrap
+html-math-method:
+  method: mathjax
+  url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+author:
+  - name: Grupo Financiero Ficohsa 
+    affiliations: Data Science
+date: last-modified
+html: 
+  toc: true
+  code-fold: show
+---
+
+```{r setup}
+#| include: false
+
+library(kableExtra)
+library(readxl)
+library(tidyverse)
+library(reticulate)
+
+```
+
+```{r}
+#| eval: false
+#| include: false
+# do this just once
+
+```
+
+```{python}
+#| echo: false
+#| 
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import io
+import math
+from matplotlib.ticker import FuncFormatter
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
+sns.set_context("talk")
+sns.set_style("whitegrid")
+sns.set(style = "white", rc = {"lines.linewidth": 3})
+
+def add_value_labels2(ax, typ, fmt = "%.2f%%%" , fontsize = 10, padding = 3):
+
+  if typ == 'bar':
+    for container in ax.containers:
+      colors = [patch.get_facecolor() for patch in container.patches]  # obtener color de cada barra
+      labels = [fmt % (v*100) for v in container.datavalues]
+      for label, bar, color in zip(labels, container.patches, colors):
+        ax.annotate(label,
+                    xy = (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext = (0, padding),
+                    textcoords = "offset points",
+                    ha = 'center', va = 'bottom',
+                    fontsize = fontsize,
+                    color = color)
+                    
+df = pd.read_csv("img_indicadores_bancas.csv", sep = ";")
+df["Value"] = df["Value"]/100
+
+```
+
+## Comportamiento Historico del Banco (2019 - 2024) {style="font-size: 20px"}
+
+::::: columns
+::: {.column style="font-size: small;"}
+```{r, echo=FALSE}
+library(gt)
+
+data <- tibble::tibble(
+  Periodo = c(2019, 2020, 2021, 2022, 2023,2024),
+  ROAA = c("1.23%", "1.07%", "1.38%", "1.48%", "1.33%", "1.36%"),
+  NIM  = c("5.71%", "5.24%", "5.10%", "5.22%", "5.23%", "5.48%"),
+  COC  = c("1.99%", "1.77%", "2.15%", "1.54%", "1.24%", "1.85%"),
+  COF  = c("4.90%", "4.60%", "3.40%", "3.10%", "4.10%", "5.30%")
+) %>% as.data.frame()
+
+data %>% 
+  gt() %>% 
+  tab_options(table.font.size = px(12),
+              heading.align = "left",
+              column_labels.font.weight = "bold",
+              table.border.top.color = "gray",
+              table.border.bottom.color = "gray") %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = "#0073C2"),
+      cell_text(color = "white",weight = "bold")
+    ),
+    locations = cells_column_labels(everything())
+  ) %>% 
+  tab_options(
+    table.font.size = px(13),
+    heading.align = "left"
+  )
+  
+
+```
+:::
+
+::: column
+-   Nunca se alcanzo una $ROAA\geq 1.5\%$ **de forma sostenida.**
+
+-   En 2022 se estuvo más cerca $(1.48\%)$, pero con **un COF historicamente bajo.**
+
+-   Cuando el COF subio en 2024 $(5.30\%)$, la ROAA **no supero el** $1.36\%$ a pesar de NIM más alto $(5.48\%)$
+
+-   Estos resultados historicos, evidencian que el comportamiento de la ROAA en la organización ha sido altamente sensible al COF.
+:::
+:::::
+
+## Comportamiento Historico del Banco (2019 - 2024) {style="font-size: 20px"}
+
+::::: columns
+::: {.column style="font-size: 16px;"}
+![](img/fig2.png){width="950"}
+:::
+
+::: column
+-   **Banca de Personas** si bien tiene un NIM alto, tambien tiene el COC más alto.
+
+-   **La banca corporativa** es más conservadora, con bajo riesgo, pero también tiene la menor rentabilidad.
+
+-   Estos contrastes muestran que **la decisión de como componer el portafolio entre estas bancas no es trivial**. Y eso es precisamente lo que el modelo que presento resuelve. Encontrar la combinación óptima que permite alcanzar el ROAA objetivo bajo restricciones realistas del negocio.
+:::
+:::::
+
+## Planteamiento Formal del Modelo {style="font-size: 16px"}
+
+::::: columns
+::: {.column style="font-size: small;"}
+-   Sean las bancas Corporativa: $C$, Empresarial: $E$ y Personas: $P$.
+
+-   **Función Objetivo:**\
+    \
+    $$\max ROAA = NIM_{tot} - COC_{tot} - COF_{tot}$$\
+
+    -   Donde: $$NIM_{tot} = \sum_{s\in \{C,E,P\}}w_s\cdot NIM_s$$ $$COC_{tot} = \sum_{s\in \{C,E,P\}}w_s\cdot COC_s$$ $$COF_{tot} = \sum_{s\in \{C,E,P\}}w_s\cdot COF_s$$
+
+-   **Sujeto a:**\
+
+    -   Pesos de participación por banca: $$w_C + w_E + w=1$$\
+    -   Restricciones de acotación de indicadores: $$5\% \leq NIM_{tot}\leq 15\%$$ $$1\% \leq COC_{tot}\leq 6\%$$ $$ROAA\geq ROAA_{objetivo}$$\
+:::
+
+::: {.column style="font-size: 15px;"}
+-   **`Los rangos de acotación de los indicadores no son arbitrarios; fueron definidos a partir del análisis estadístico de la serie historica mensual del banco durante el 2024.`**
+:::
+:::::
+
+## Resultados del Modelo {style="font-size: 16px"}
+
+::::: columns
+::: {.column style="font-size: small;"}
+-   **Escenario 1 - COF 3.10%\
+    \
+    **![](escenario1.png){width="1400"}\
+    Con la composición actual del portafolio (Corporativa 53%, Empresarial 7% y Personas 40%), el modelo muestra que se logra alcanzar una $ROAA \geq 1.5\%$ en múltiples combinaciones de NIM y COC, validando que con costos de fondeo controlados el objetivo de rentabilidad es factible.
+
+-   **Escenario 2 - COF 4.5%\
+    \
+    **![](escenario2.png){width="1400"}
+:::
+
+::: {.column style="font-size: 15px;"}
+-   \
+    Bajo las mismas participaciones del portafolio, la rentabilidad se reduce notablemente. Aquí todavia existen combinaciones que superan el 1.5% de ROAA, estas se restringen en zonas con alto NIM y bajo COC. Esto muestra que el margen de maniobra se estrecha y requiere monitoreo más preciso.
+
+-   **Escenario 3 - COF 5.30%\
+    \
+    **![](escenario3.png){width="1400"}\
+    \
+    Con un fondeo elevado como el observado en 2024, el modelo indica que alcanzar 1.5% de ROAA es muy dificil con la composición actual del portafolio. Solo combinaciones muy exigentes de NIM y COC acotadas a la realidad del negocio lo permiten.
+:::
+:::::
+
+## Otros Resultados {style="font-size: 16px"}
+
+::::: columns
+::: {.column style="font-size: small;"}
+-   **Escenario 1 - COF 3.10% con** $5\% \leq NIM_{tot}\leq 6\%$**:**\
+    \
+    ![](img/nim1.png)
+:::
+
+::: {.column style="font-size: 15px;"}
+-   **Escenario 2 - COF 4.5% con** $5\% \leq NIM_{tot} \leq 6\%$**:**\
+    ![](img/nim2.png){width="900"}\
+:::
+:::::
+
+## Modelo Combinación óptima de la cartera {style="font-size: 16px"}
+
+::::: columns
+::: {.column style="font-size: small;"}
+-   En el modelo previo buscamos las combinaciones de NIM y COC considerando la influencia del COF tal que $ROAA \geq 1.5\%$. En esta modificación que se le hizo al modelo ahora buscamos los pesos óptimos $(w_C,w_E,w_P)$ tal que $ROA = 1.5\%$.
+
+-   **Función objetivo:**\
+    \
+    $$\min_{w_C, w_E,w_P}|w_C\cdot ROAA_C + w_E\cdot ROAA_E + w_P\cdot ROAA_P - ROAA_{objetivo}|$$
+
+-   **Sujeto a las restricciones:**\
+    \
+
+    -   $w_C + w_E + w_P = 1$\
+    -   $ROAA_{tot} \in [ROAA_{objetivo} - \epsilon, ROAA_{objetivo} + \epsilon]$\
+    -   $w_P \geq w_E + 1\%$\
+    -   $w_C\geq 10\%, w_E\geq 10\%, w_P\geq 10\%$
+
+    \
+
+-   **Resultados del modelo**\
+    \
+    ![](esc_opt.png)
+:::
+
+::: {.column style="font-size: 15px;"}
+:::
+:::::
