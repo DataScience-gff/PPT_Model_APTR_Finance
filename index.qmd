@@ -1,18 +1,22 @@
 ---
-title: "Metodología Apetito de Riesgo"
+title: Metodología Apetito Riesgo
+subtitle: Modelo 
+format: clean-revealjs
+execute: 
+  echo: true
+  output: true
+code-fold: false
+code-overflow: wrap
+html-math-method:
+  method: mathjax
+  url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 author:
-  - Juan Isaula, Assistant Manager Data Science
-  - Raul Amador, Manager Integral Business Risk Management
-format: 
-  revealjs:
-    #multiplex: true
-    theme: ["pp.scss"]
-    slide-number: c/t
-    incremental: true
-    title-slide-attributes:
-      data-background-image: img/fondo3.png
-      data-background-size: cover  
-editor: visual
+  - name: Grupo Financiero Ficohsa 
+    affiliations: Data Science
+date: last-modified
+html: 
+  toc: true
+  code-fold: show
 ---
 
 ```{r setup}
@@ -33,6 +37,8 @@ library(reticulate)
 ```
 
 ```{python}
+#| echo: false
+#| 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,7 +76,7 @@ df["Value"] = df["Value"]/100
 
 ::::: columns
 ::: {.column style="font-size: small;"}
-```{r}
+```{r, echo=FALSE}
 library(gt)
 
 data <- tibble::tibble(
@@ -191,7 +197,7 @@ data %>%
 
 ::: {.column style="font-size: 15px;"}
 -   **Escenario 2 - COF 4.5% con** $5\% \leq NIM_{tot} \leq 6\%$**:**\
-    ![](img/nim2.png){width="900"}
+    ![](img/nim2.png){width="900"}\
 :::
 :::::
 
